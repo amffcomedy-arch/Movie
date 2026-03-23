@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Adept Cinema</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-900 text-white pb-20 select-none overflow-x-hidden" oncontextmenu="return false;">
+
+    <header class="p-4 flex justify-between items-center sticky top-0 bg-gray-900 z-50">
+        <h1 class="text-red-600 font-bold text-2xl tracking-tighter uppercase">ADEPT CINEMA</h1>
+        <i class="fa fa-search text-xl"></i>
+    </header>
+
+    <div id="banner-container" class="flex overflow-x-auto snap-x snap-mandatory h-64 gap-0 no-scrollbar">
+        </div>
+
+    <div id="movie-sections" class="mt-6 space-y-8 px-4">
+        </div>
+
+    <nav class="fixed bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700 flex justify-around p-3 z-50">
+        <a href="index.html" class="flex flex-col items-center text-xs gap-1 text-red-500">
+            <i class="fa fa-home text-lg"></i><span>Home</span>
+        </a>
+        <a href="#" class="flex flex-col items-center text-xs gap-1">
+            <i class="fa fa-search text-lg"></i><span>Search</span>
+        </a>
+        <a href="admin.html" class="flex flex-col items-center text-xs gap-1">
+            <i class="fa fa-user-shield text-lg"></i><span>Admin</span>
+        </a>
+    </nav>
+
+    <script type="module">
+        import { db } from './js/firebase-config.js';
+        import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // Fetch Banners
+        async function loadBanners() {
+            const querySnapshot = await getDocs(collection(db, "banners"));
+            const container = document.getElementById('banner-container');
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                container.innerHTML += `
+                    <div class="min-w-full snap-center relative h-64">
+                        <img src="${data.url}" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-gray-900"></div>
+                    </div>`;
+            });
+        }
+
+        // Fetch Movies by Category
+        async function loadMovies() {
+            const moviesSnapshot = await getDocs(collection(db, "movies"));
+            const section = document.getElementById('movie-sections');
+            let movies = [];
+            moviesSnapshot.forEach(doc => movies.push({id: doc.id, ...doc.data()}));
+
+            // Grouping logic (Static for demo, can be dynamic)
+            const categories = [...new Set(movies.map(m => m.category))];
+            
+            categories.forEach(cat => {
+                let movieCards = movies.filter(m => m.category === cat).map(m => `
+                    <a href="movie-details.html?id=${m.id}" class="min-w-[120px] w-[120px]">
+                        <img src="${m.poster}" class="rounded-md h-44 w-full object-cover shadow-lg">
+                        <p class="text-xs mt-1 truncate">${m.title}</p>
+                    </a>
+                `).join('');
+
+                section.innerHTML += `
+                    <div>
+                        <h3 class="text-lg font-bold mb-3">${cat}</h3>
+                        <div class="flex overflow-x-auto gap-4 no-scrollbar">${movieCards}</div>
+                    </div>`;
+            });
+        }
+
+        loadBanners();
+        loadMovies();
+    </script>
+
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</body>
+</html>

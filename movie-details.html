@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Movie Details - Adept Cinema</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .no-select { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+        body { scrollbar-width: none; -ms-overflow-style: none; }
+        body::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white pb-24 no-select" oncontextmenu="return false;">
+
+    <div class="fixed top-4 left-4 z-50">
+        <a href="index.html" class="bg-black/50 w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-md">
+            <i class="fa fa-arrow-left text-white"></i>
+        </a>
+    </div>
+
+    <div id="movie-content">
+        <div class="flex items-center justify-center h-screen">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-red-600"></div>
+        </div>
+    </div>
+
+    <nav class="fixed bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700 flex justify-around p-3 z-50">
+        <a href="index.html" class="flex flex-col items-center text-xs gap-1">
+            <i class="fa fa-home text-lg"></i><span>Home</span>
+        </a>
+        <a href="#" class="flex flex-col items-center text-xs gap-1">
+            <i class="fa fa-search text-lg"></i><span>Search</span>
+        </a>
+        <a href="admin.html" class="flex flex-col items-center text-xs gap-1">
+            <i class="fa fa-user-shield text-lg"></i><span>Admin</span>
+        </a>
+    </nav>
+
+    <script type="module">
+        import { db } from './firebase-config.js'; // Agar folder me hai toh './js/firebase-config.js' karein
+        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // 1. URL se ID nikalna
+        const urlParams = new URLSearchParams(window.location.search);
+        const movieId = urlParams.get('id');
+
+        async function fetchMovieDetails() {
+            const contentDiv = document.getElementById('movie-content');
+            
+            if (!movieId) {
+                contentDiv.innerHTML = `<p class="text-center mt-20">Movie not found!</p>`;
+                return;
+            }
+
+            try {
+                const docRef = doc(db, "movies", movieId);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const movie = docSnap.data();
+                    
+                    contentDiv.innerHTML = `
+                        <div class="relative h-[60vh] w-full">
+                            <img src="${movie.poster}" class="w-full h-full object-cover shadow-2xl">
+                            <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-black/20"></div>
+                        </div>
+
+                        <div class="px-6 -mt-10 relative z-10">
+                            <h1 class="text-4xl font-black tracking-tight mb-2 uppercase">${movie.title}</h1>
+                            
+                            <div class="flex items-center gap-4 text-sm text-gray-400 mb-6">
+                                <span class="bg-yellow-500 text-black px-2 py-0.5 rounded font-bold">⭐ ${movie.rating || 'N/A'}</span>
+                                <span>${movie.release_year || ''}</span>
+                                <span class="border border-gray-600 px-2 rounded uppercase text-[10px]">${movie.category}</span>
+                            </div>
+
+                            <a href="${movie.link}" target="_blank" class="flex items-center justify-center gap-3 w-full bg-white text-black py-4 rounded-lg font-bold text-lg hover:bg-gray-200 transition active:scale-95 mb-8">
+                                <i class="fa fa-play"></i> Watch Now
+                            </a>
+
+                            <h3 class="text-lg font-bold mb-2 text-red-600 uppercase tracking-widest text-sm">Storyline</h3>
+                            <p class="text-gray-300 leading-relaxed mb-10 text-justify">
+                                ${movie.description || 'No description available for this movie yet.'}
+                            </p>
+                        </div>
+                    `;
+                } else {
+                    contentDiv.innerHTML = `<p class="text-center mt-20">No such movie exists in our database.</p>`;
+                }
+            } catch (error) {
+                console.error("Error fetching movie:", error);
+                contentDiv.innerHTML = `<p class="text-center mt-20">Failed to load movie. Check console.</p>`;
+            }
+        }
+
+        fetchMovieDetails();
+    </script>
+
+</body>
+</html>
